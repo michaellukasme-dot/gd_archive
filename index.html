@@ -1,0 +1,112 @@
+<!doctype html>
+<!-- PostMind Reader · Concert tab · band-agnostic surface
+     Loads {slug}_shows.json produced by ia_concert_ingest.py; falls back to the
+     verified SEED below. Setlists are factual song lists (titles only, no lyrics).
+     v0.1 2026-06-08 -->
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Every Show · PostMind Reader</title>
+<style>
+  :root{--ink:#1a1207;--paper:#f4ead6;--gold:#c8932f;--rust:#9a3b1b;--line:#d8c8a6;--card:#fffdf7}
+  *{box-sizing:border-box} body{margin:0;font:16px/1.5 Georgia,'Iowan Old Style',serif;background:var(--paper);color:var(--ink)}
+  header{position:sticky;top:0;background:var(--ink);color:var(--paper);padding:.7rem 1rem;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+  .bolt{color:var(--gold)} h1{font-size:1.15rem;margin:0;letter-spacing:.04em}
+  .sub{font-size:.72rem;opacity:.8;letter-spacing:.18em;text-transform:uppercase}
+  .controls{display:flex;flex-wrap:wrap;gap:.5rem;padding:.7rem 1rem;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:54px;z-index:4}
+  input,select{font:inherit;padding:.4rem .6rem;border:1px solid var(--line);border-radius:6px;background:#fff}
+  input[type=search]{flex:1;min-width:180px}
+  .count{padding:.4rem 1rem;font-size:.8rem;color:var(--rust);font-style:italic}
+  main{padding:.5rem 1rem 3rem;max-width:820px;margin:0 auto}
+  .show{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:8px;padding:.85rem 1rem;margin:.7rem 0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .date{font-weight:bold;font-size:1.05rem} .venue{color:var(--rust);font-weight:bold}
+  .loc{font-size:.85rem;opacity:.75} .lineup{font-size:.82rem;font-style:italic;margin:.3rem 0;opacity:.85}
+  .setlist{font-size:.9rem;margin:.4rem 0;white-space:pre-wrap}
+  .badge{display:inline-block;font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;padding:.12rem .45rem;border-radius:99px;vertical-align:middle}
+  .ok{background:#e7f0e0;color:#3a6126;border:1px solid #b9d3a6} .none{background:#f3e4df;color:#9a3b1b;border:1px solid #e2bcae}
+  .links a{display:inline-block;margin:.35rem .6rem .1rem 0;font-size:.82rem;color:var(--rust);text-decoration:none;border-bottom:1px dotted var(--rust)}
+  .links a.best{font-weight:bold;color:var(--ink);border-bottom:2px solid var(--gold)}
+  .note{font-size:.74rem;opacity:.6;margin-top:.35rem}
+  .banner{background:#fff7e6;border:1px solid var(--gold);border-radius:8px;padding:.6rem .8rem;margin:.7rem 0;font-size:.85rem}
+</style></head>
+<body>
+<header><h1><span class="bolt">&#9889;</span> EVERY SHOW</h1><div class="sub" id="band">Grateful Dead &middot; live archive</div></header>
+<div class="controls">
+  <input type="search" id="q" placeholder="search song, venue, year, taper&hellip;">
+  <select id="year"><option value="">All years</option></select>
+  <select id="src"><option value="">Any source</option><option>SBD</option><option>Matrix</option><option>AUD</option></select>
+  <select id="sort"><option value="asc">Oldest first</option><option value="desc">Newest first</option></select>
+</div>
+<div class="count" id="count"></div>
+<main id="list"></main>
+<script>
+// --- verified SEED (real archive.org items; replaced when {slug}_shows.json loads) ---
+const SEED = [
+ {date:"1976-06-09",venue:"Boston Music Hall",location:"Boston, MA",
+  lineup:"Jerry Garcia, Bob Weir, Keith Godchaux, Phil Lesh, Bill Kreutzmann, Mickey Hart, Donna Jean Godchaux",
+  guests:"",setlist:"Set I: Cold Rain & Snow, Cassidy, Scarlet Begonias, The Music Never Stopped, Crazy Fingers, Big River, They Love Each Other, Looks Like Rain, Ship of Fools, Promised Land\nSet II: Saint Stephen > Eyes of the World > Let It Grow, Brown Eyed Women, Lazy Lightning > Supplication, High Time, Samson & Delilah, It Must Have Been the Roses, Dancing in the Street > Wharf Rat > Around & Around\nEncore: Franklin's Tower",
+  notes:"Tech-glitch: a chunk of the 2nd set was not recorded.",setlist_source:"archive.org",
+  best_recording:{identifier:"gd1976-06-09.152189.s1-s2p.aud.petrunis.flac2448",source:"AUD",stream:"https://archive.org/details/gd1976-06-09.152189.s1-s2p.aud.petrunis.flac2448"},
+  all_sources:"https://archive.org/search?query=collection%3AGratefulDead+AND+date%3A1976-06-09",
+  recordings:[{identifier:"gd1976-06-09.152189.s1-s2p.aud.petrunis.flac2448",source:"AUD",link:"https://archive.org/details/gd1976-06-09.152189.s1-s2p.aud.petrunis.flac2448"}]},
+ {date:"1988-09-20",venue:"Madison Square Garden",location:"New York, NY",
+  lineup:"Jerry Garcia, Bob Weir, Brent Mydland, Phil Lesh, Bill Kreutzmann, Mickey Hart",
+  guests:"",setlist:"Set I: Jack Straw, Althea, Mama Tried > Big River, Peggy-O, When I Paint My Masterpiece, Louie Louie, The Music Never Stopped\nSet II: Bertha > Cumberland Blues, Looks Like Rain, Terrapin Station > Drums > Space > Truckin' > Goin' Down the Road Feeling Bad > Morning Dew\nEncore: Johnny B. Goode",
+  notes:"Recorded by Don Pearson and Dan Healy; UltraMatrix patch source.",setlist_source:"archive.org",
+  best_recording:{identifier:"gd1988-09-20.152581.UltraMatrix.sbd.cm.miller.t.flac16",source:"Matrix/SBD",stream:"https://archive.org/details/gd1988-09-20.152581.UltraMatrix.sbd.cm.miller.t.flac16"},
+  all_sources:"https://archive.org/search?query=collection%3AGratefulDead+AND+date%3A1988-09-20",
+  recordings:[{identifier:"gd1988-09-20.152581.UltraMatrix.sbd.cm.miller.t.flac16",source:"Matrix/SBD",link:"https://archive.org/details/gd1988-09-20.152581.UltraMatrix.sbd.cm.miller.t.flac16"}]}
+];
+let SHOWS = SEED, isSeed = true;
+
+async function load(){
+  // tries the pipeline output for this tab's slug; falls back to SEED
+  const slug = (new URLSearchParams(location.search)).get("slug") || "gd";
+  try{ const r = await fetch(`./${slug}_shows.json`); if(r.ok){ SHOWS = await r.json(); isSeed=false; } }catch(e){}
+  initYears(); render();
+}
+function initYears(){
+  const ys=[...new Set(SHOWS.map(s=>s.date.slice(0,4)))].sort();
+  document.getElementById("year").insertAdjacentHTML("beforeend", ys.map(y=>`<option>${y}</option>`).join(""));
+}
+function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function render(){
+  const q=document.getElementById("q").value.toLowerCase().trim();
+  const yr=document.getElementById("year").value, src=document.getElementById("src").value;
+  const dir=document.getElementById("sort").value;
+  let rows=SHOWS.filter(s=>{
+    if(yr && !s.date.startsWith(yr)) return false;
+    if(src && !(s.best_recording?.source||"").toLowerCase().includes(src.toLowerCase())
+            && !(s.recordings||[]).some(r=>(r.source||"").toLowerCase().includes(src.toLowerCase()))) return false;
+    if(q){ const hay=(s.date+" "+s.venue+" "+s.location+" "+s.lineup+" "+s.setlist+" "+(s.notes||"")).toLowerCase();
+           if(!hay.includes(q)) return false; }
+    return true;
+  });
+  rows.sort((a,b)=> dir==="asc"? a.date.localeCompare(b.date): b.date.localeCompare(a.date));
+  document.getElementById("count").textContent =
+     `${rows.length.toLocaleString()} shows` + (isSeed? "  ·  seed sample — run the pipeline to load the full archive":"");
+  document.getElementById("list").innerHTML =
+    (isSeed? `<div class="banner"><b>Seed sample (2 verified shows).</b> Drop <code>gd_shows.json</code> from the ingest pipeline next to this file to load all ~2,300 GD shows (or <code>?slug=jgb</code> for the Jerry Garcia Band).</div>`:"")
+    + rows.map(card).join("");
+}
+function card(s){
+  const sl = s.setlist_source==="NONE"
+     ? `<span class="badge none">setlist pending</span>`
+     : `<span class="badge ok">setlist: ${esc(s.setlist_source||"archive.org")}</span>`;
+  const links = `<div class="links">`
+     + (s.best_recording? `<a class="best" target="_blank" href="${esc(s.best_recording.stream)}">&#9654; Best tape (${esc(s.best_recording.source||"listen")})</a>`:"")
+     + (s.all_sources? `<a target="_blank" href="${esc(s.all_sources)}">All sources &#8599;</a>`:"")
+     + `</div>`;
+  return `<div class="show">
+     <div><span class="date">${esc(s.date)}</span> &middot; <span class="venue">${esc(s.venue)}</span> ${sl}</div>
+     <div class="loc">${esc(s.location)}</div>
+     ${s.lineup?`<div class="lineup">${esc(s.lineup)}</div>`:""}
+     ${s.guests?`<div class="lineup">Guests: ${esc(s.guests)}</div>`:""}
+     ${s.setlist?`<div class="setlist">${esc(s.setlist)}</div>`:""}
+     ${links}
+     ${s.notes?`<div class="note">${esc(s.notes)}</div>`:""}
+   </div>`;
+}
+["q","year","src","sort"].forEach(id=>document.getElementById(id).addEventListener("input",render));
+load();
+</script>
+</body></html>
