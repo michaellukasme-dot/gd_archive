@@ -1,0 +1,4 @@
+Drop your Steal Your Face image here, named exactly:  steal-your-face.png
+- Square (e.g., 512 x 512), PNG.
+- Crop to JUST the skull/circle (no album text) for the cleanest home-screen icon.
+- That's the only icon file the app needs — the manifest + apple-touch-icon both point to it.

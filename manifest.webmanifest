@@ -1,0 +1,16 @@
+{
+  "name": "Grateful Dead Archive",
+  "short_name": "GD Archive",
+  "description": "Every show — a personal Grateful Dead concert archive.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4ead6",
+  "theme_color": "#1a1207",
+  "icons": [
+    {"src":"icons/steal-your-face-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"icons/steal-your-face.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"icons/steal-your-face-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+  ]
+}

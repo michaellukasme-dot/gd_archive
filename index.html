@@ -5,6 +5,11 @@
      v0.1 2026-06-08 -->
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1a1207">
+<link rel="apple-touch-icon" href="icons/steal-your-face.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GD Archive">
 <title>Every Show · PostMind Reader</title>
 <style>
   :root{--ink:#1a1207;--paper:#f4ead6;--gold:#c8932f;--rust:#9a3b1b;--line:#d8c8a6;--card:#fffdf7}
@@ -108,5 +113,9 @@ function card(s){
 }
 ["q","year","src","sort"].forEach(id=>document.getElementById(id).addEventListener("input",render));
 load();
+</script>
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
+(function(){var d=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();d=e;var b=document.createElement('button');b.textContent='\u26a1 Install';b.style.cssText='position:fixed;right:14px;bottom:14px;z-index:999;background:#1a1207;color:#f4ead6;border:1px solid #c8932f;border-radius:10px;padding:10px 16px;font:600 14px Georgia,serif;cursor:pointer';b.onclick=function(){b.remove();if(d){d.prompt();d=null;}};document.body.appendChild(b);});})();
 </script>
 </body></html>
