@@ -1,7 +1,7 @@
 /* Every Show — GD Archive · service worker (overwrites the OLD one of the same name so returning
    visitors — like the early copy Robert Garcia got — force-update to the new cassette). New cache name
    + skipWaiting + clients.claim evict the old cache and take control. */
-const CACHE = 'gd-archive-v2-2026-06-24';
+const CACHE = 'gd-archive-v3-2026-06-24';
 const SHELL = ['./', './index.html', './cassette-reader.js', './market-core.js', './syf.png',
   './manifest.webmanifest', './icons/steal-your-face-192.png', './icons/steal-your-face.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL).catch(() => {})).then(() => self.skipWaiting())); });
