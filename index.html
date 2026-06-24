@@ -1,121 +1,88 @@
-<!doctype html>
-<!-- PostMind Reader · Concert tab · band-agnostic surface
-     Loads {slug}_shows.json produced by ia_concert_ingest.py; falls back to the
-     verified SEED below. Setlists are factual song lists (titles only, no lyrics).
-     v0.1 2026-06-08 -->
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="manifest" href="manifest.webmanifest">
+<!DOCTYPE html>
+<!-- gd_reader_tab — the cassette content reader (the_reader's "cassette = card"). Sample data; setlists are factual titles; no lyrics. -->
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Every Show · Grateful Dead Live Archive</title>
+<meta name="description" content="Every Grateful Dead show, in your pocket — the cassette that plays. Filter by year, state, song, venue. Band-sanctioned audio from the Internet Archive.">
 <meta name="theme-color" content="#1a1207">
-<link rel="apple-touch-icon" href="icons/steal-your-face.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="GD Archive">
-<title>Every Show · PostMind Reader</title>
-<style>
-  :root{--ink:#1a1207;--paper:#f4ead6;--gold:#c8932f;--rust:#9a3b1b;--line:#d8c8a6;--card:#fffdf7}
-  *{box-sizing:border-box} body{margin:0;font:16px/1.5 Georgia,'Iowan Old Style',serif;background:var(--paper);color:var(--ink)}
-  header{position:sticky;top:0;background:var(--ink);color:var(--paper);padding:.7rem 1rem;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-  .bolt{color:var(--gold)} h1{font-size:1.15rem;margin:0;letter-spacing:.04em}
-  .sub{font-size:.72rem;opacity:.8;letter-spacing:.18em;text-transform:uppercase}
-  .controls{display:flex;flex-wrap:wrap;gap:.5rem;padding:.7rem 1rem;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:54px;z-index:4}
-  input,select{font:inherit;padding:.4rem .6rem;border:1px solid var(--line);border-radius:6px;background:#fff}
-  input[type=search]{flex:1;min-width:180px}
-  .count{padding:.4rem 1rem;font-size:.8rem;color:var(--rust);font-style:italic}
-  main{padding:.5rem 1rem 3rem;max-width:820px;margin:0 auto}
-  .show{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:8px;padding:.85rem 1rem;margin:.7rem 0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-  .date{font-weight:bold;font-size:1.05rem} .venue{color:var(--rust);font-weight:bold}
-  .loc{font-size:.85rem;opacity:.75} .lineup{font-size:.82rem;font-style:italic;margin:.3rem 0;opacity:.85}
-  .setlist{font-size:.9rem;margin:.4rem 0;white-space:pre-wrap}
-  .badge{display:inline-block;font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;padding:.12rem .45rem;border-radius:99px;vertical-align:middle}
-  .ok{background:#e7f0e0;color:#3a6126;border:1px solid #b9d3a6} .none{background:#f3e4df;color:#9a3b1b;border:1px solid #e2bcae}
-  .links a{display:inline-block;margin:.35rem .6rem .1rem 0;font-size:.82rem;color:var(--rust);text-decoration:none;border-bottom:1px dotted var(--rust)}
-  .links a.best{font-weight:bold;color:var(--ink);border-bottom:2px solid var(--gold)}
-  .note{font-size:.74rem;opacity:.6;margin-top:.35rem}
-  .banner{background:#fff7e6;border:1px solid var(--gold);border-radius:8px;padding:.6rem .8rem;margin:.7rem 0;font-size:.85rem}
-</style></head>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/steal-your-face-192.png">
+<style>html,body{margin:0;height:100%;background:#f4ead6}#app{min-height:100vh}</style>
+</head>
 <body>
-<header><h1><span class="bolt">&#9889;</span> EVERY SHOW</h1><div class="sub" id="band">Grateful Dead &middot; live archive</div></header>
-<div class="controls">
-  <input type="search" id="q" placeholder="search song, venue, year, taper&hellip;">
-  <select id="year"><option value="">All years</option></select>
-  <select id="src"><option value="">Any source</option><option>SBD</option><option>Matrix</option><option>AUD</option></select>
-  <select id="sort"><option value="asc">Oldest first</option><option value="desc">Newest first</option></select>
-</div>
-<div class="count" id="count"></div>
-<main id="list"></main>
+<div id="app"></div>
+<script src="market-core.js"></script>
+<script src="cassette-reader.js"></script>
 <script>
-// --- verified SEED (real archive.org items; replaced when {slug}_shows.json loads) ---
-const SEED = [
- {date:"1976-06-09",venue:"Boston Music Hall",location:"Boston, MA",
-  lineup:"Jerry Garcia, Bob Weir, Keith Godchaux, Phil Lesh, Bill Kreutzmann, Mickey Hart, Donna Jean Godchaux",
-  guests:"",setlist:"Set I: Cold Rain & Snow, Cassidy, Scarlet Begonias, The Music Never Stopped, Crazy Fingers, Big River, They Love Each Other, Looks Like Rain, Ship of Fools, Promised Land\nSet II: Saint Stephen > Eyes of the World > Let It Grow, Brown Eyed Women, Lazy Lightning > Supplication, High Time, Samson & Delilah, It Must Have Been the Roses, Dancing in the Street > Wharf Rat > Around & Around\nEncore: Franklin's Tower",
-  notes:"Tech-glitch: a chunk of the 2nd set was not recorded.",setlist_source:"archive.org",
-  best_recording:{identifier:"gd1976-06-09.152189.s1-s2p.aud.petrunis.flac2448",source:"AUD",stream:"https://archive.org/details/gd1976-06-09.152189.s1-s2p.aud.petrunis.flac2448"},
-  all_sources:"https://archive.org/search?query=collection%3AGratefulDead+AND+date%3A1976-06-09",
-  recordings:[{identifier:"gd1976-06-09.152189.s1-s2p.aud.petrunis.flac2448",source:"AUD",link:"https://archive.org/details/gd1976-06-09.152189.s1-s2p.aud.petrunis.flac2448"}]},
- {date:"1988-09-20",venue:"Madison Square Garden",location:"New York, NY",
-  lineup:"Jerry Garcia, Bob Weir, Brent Mydland, Phil Lesh, Bill Kreutzmann, Mickey Hart",
-  guests:"",setlist:"Set I: Jack Straw, Althea, Mama Tried > Big River, Peggy-O, When I Paint My Masterpiece, Louie Louie, The Music Never Stopped\nSet II: Bertha > Cumberland Blues, Looks Like Rain, Terrapin Station > Drums > Space > Truckin' > Goin' Down the Road Feeling Bad > Morning Dew\nEncore: Johnny B. Goode",
-  notes:"Recorded by Don Pearson and Dan Healy; UltraMatrix patch source.",setlist_source:"archive.org",
-  best_recording:{identifier:"gd1988-09-20.152581.UltraMatrix.sbd.cm.miller.t.flac16",source:"Matrix/SBD",stream:"https://archive.org/details/gd1988-09-20.152581.UltraMatrix.sbd.cm.miller.t.flac16"},
-  all_sources:"https://archive.org/search?query=collection%3AGratefulDead+AND+date%3A1988-09-20",
-  recordings:[{identifier:"gd1988-09-20.152581.UltraMatrix.sbd.cm.miller.t.flac16",source:"Matrix/SBD",link:"https://archive.org/details/gd1988-09-20.152581.UltraMatrix.sbd.cm.miller.t.flac16"}]}
+/* Sample shows. Setlists = factual SONG TITLES only (not lyrics). Real archive data comes from dead_dance. */
+function md(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
+var TODAY = "1976" + md().slice(4);   /* a vintage show on today's month/day → demoes "On This Day" */
+var SHOWS = [
+  {id:"s0",date:"1987-04-03",year:1987,venue:"The Centrum",city:"Worcester",state:"MA",country:"USA",band:"Grateful Dead",source:"Audience",rating:4.6,segues:true,
+   nowPlaying:"Hell in a Bucket",
+   audioBase:"https://archive.org/download/gd87-04-03.sennme80.clark-miller.24898.sbeok.shnf/gd87-04-03d",
+   tracks:[
+     {f:"1t01",t:"Hell in a Bucket"},{f:"1t02",t:"Sugaree"},{f:"1t03",t:"C C Rider"},{f:"1t04",t:"It Must Have Been the Roses"},{f:"1t05",t:"It's All Over Now"},{f:"1t06",t:"Big Railroad Blues"},{f:"1t07",t:"Let It Grow"},{f:"1t08",t:"Don't Ease Me In"},
+     {f:"2t01",t:"China Cat Sunflower"},{f:"2t02",t:"I Know You Rider"},{f:"2t03",t:"Man Smart, Woman Smarter"},{f:"2t04",t:"Crazy Fingers"},{f:"2t05",t:"Samson and Delilah"},{f:"2t06",t:"Drums"},{f:"2t07",t:"Space"},{f:"2t08",t:"The Other One"},{f:"2t09",t:"Wharf Rat"},{f:"2t10",t:"Throwing Stones"},{f:"2t11",t:"Not Fade Away"},{f:"2t12",t:"U.S. Blues"}],
+   sets:[{name:"SET 1",songs:["Hell in a Bucket","Sugaree","C C Rider","It Must Have Been the Roses","It's All Over Now","Big Railroad Blues","Let It Grow","Don't Ease Me In"]},
+         {name:"SET 2",songs:["China Cat Sunflower","I Know You Rider","Man Smart, Woman Smarter","Crazy Fingers","Samson and Delilah","Drums","Space","The Other One","Wharf Rat","Throwing Stones","Not Fade Away","U.S. Blues"]}],
+   notes:"▶ PLAYS THE WHOLE SHOW — band-sanctioned taper recording from the Internet Archive. Songs auto-advance, no leaving the app. Press play; the reels spin."},
+  {id:"s1",date:"1977-05-08",year:1977,venue:"Barton Hall, Cornell",city:"Ithaca",state:"NY",country:"USA",band:"Grateful Dead",source:"Audience",rating:4.9,segues:true,
+   nowPlaying:"Minglewood Blues",
+   audioBase:"https://archive.org/download/gd1977-05-08.shure57.stevenson.29303.flac16/gd1977-05-08d",
+   tracks:[
+     {f:"01t02",t:"Minglewood Blues"},{f:"01t03",t:"Loser"},{f:"01t04",t:"El Paso"},{f:"01t05",t:"They Love Each Other"},{f:"01t06",t:"Jack Straw"},{f:"01t07",t:"Deal"},{f:"01t08",t:"Lazy Lightning > Supplication"}],
+   sets:[{name:"SET 1",songs:["Minglewood Blues","Loser","El Paso","They Love Each Other","Jack Straw","Deal","Lazy Lightning > Supplication"]},
+         {name:"SET 2",songs:["Scarlet Begonias > Fire on the Mountain","Estimated Prophet","Saint Stephen > Not Fade Away","Morning Dew","One More Saturday Night (E)"]}],
+   notes:"The legendary Cornell '77 — band-sanctioned audience tape (Internet Archive). ▶ plays Set 1, song to song. Set 2's Scarlet>Fire wires in with the full transfer."},
+  {id:"s1b",date:"1980-12-06",year:1980,venue:"Mill Valley Rec Center",city:"Mill Valley",state:"CA",country:"USA",band:"Grateful Dead",source:"Audience",rating:4.7,
+   nowPlaying:"Dire Wolf",
+   tracks:[
+     {u:"https://archive.org/download/gd1980-12-06.151263.betty.master.flac16/02%20Dire%20Wolf.mp3",t:"Dire Wolf"},
+     {u:"https://archive.org/download/gd1980-12-06.151263.betty.master.flac16/03%20On%20The%20Road%20Again.mp3",t:"On the Road Again"},
+     {u:"https://archive.org/download/gd1980-12-06.151263.betty.master.flac16/04%20I%27ve%20Been%20All%20Around%20This%20World.mp3",t:"I've Been All Around This World"},
+     {u:"https://archive.org/download/gd1980-12-06.151263.betty.master.flac16/05%20Monkey%20And%20The%20Engineer.mp3",t:"Monkey and the Engineer"},
+     {u:"https://archive.org/download/gd1980-12-06.151263.betty.master.flac16/06%20Jack-A-Roe.mp3",t:"Jack-A-Roe"},
+     {u:"https://archive.org/download/gd1980-12-06.151263.betty.master.flac16/07%20Cassidy.mp3",t:"Cassidy"},
+     {u:"https://archive.org/download/gd1980-12-06.151263.betty.master.flac16/08%20Bird%20Song.mp3",t:"Bird Song"},
+     {u:"https://archive.org/download/gd1980-12-06.151263.betty.master.flac16/09%20Ain%27t%20No%20Lie.mp3",t:"Oh Babe, It Ain't No Lie"},
+     {u:"https://archive.org/download/gd1980-12-06.151263.betty.master.flac16/10%20Ripple.mp3",t:"Ripple"}],
+   sets:[{name:"SET 1 · acoustic",songs:["Dire Wolf","On the Road Again","I've Been All Around This World","Monkey and the Engineer","Jack-A-Roe","Cassidy","Bird Song","Oh Babe It Ain't No Lie","Ripple"]}],
+   notes:"A rare ACOUSTIC set — Betty Cantor-Jackson's master tape (Internet Archive). Played at a children's Muscular Dystrophy benefit. ▶ plays the whole set, song to song."},
+  {id:"s2",date:TODAY,year:1976,venue:"Boston Music Hall",city:"Boston",state:"MA",country:"USA",band:"Grateful Dead",source:"Soundboard",rating:4.6,
+   nowPlaying:"Help on the Way",
+   sets:[{name:"SET 1",songs:["Help on the Way","Slipknot!","Franklin's Tower","The Music Never Stopped"]},
+         {name:"SET 2",songs:["St. Stephen","Eyes of the World","Stella Blue"]}],
+   notes:"On this day in history — surfaced by the 'On This Day' filter."},
+  {id:"s3",date:"1972-05-26",year:1972,venue:"Lyceum Theatre",city:"London",state:"",country:"England",band:"Grateful Dead",source:"Soundboard",rating:4.8,
+   nowPlaying:"He's Gone",
+   sets:[{name:"SET 1",songs:["Cumberland Blues","He's Gone","Mr. Charlie","Beat It on Down the Line"]},
+         {name:"SET 2",songs:["Truckin'","Dark Star","Comes a Time"]}],
+   notes:"International — find it via the STATE pill (countries are listed below the states)."},
+  {id:"s4",date:"1978-12-16",year:1978,venue:"Nashville Municipal Auditorium",city:"Nashville",state:"TN",country:"USA",band:"Grateful Dead",source:"Audience",rating:4.5,segues:true,startTrack:5,
+   nowPlaying:"Stagger Lee",
+   audioBase:"https://archive.org/download/gd1978-12-16.sonyecm250-no-dolby.walker-scotton.miller.82212.sbeok.flac16/gd78-12-16d",
+   tracks:[
+     {f:"1t01",t:"Sugaree"},{f:"1t02",t:"Beat It On Down the Line"},{f:"1t03",t:"Candyman"},{f:"1t04",t:"Me and My Uncle"},{f:"1t05",t:"Big River"},{f:"1t06",t:"Stagger Lee"},{f:"1t07",t:"Looks Like Rain"},{f:"1t08",t:"Tennessee Jed"},{f:"1t09",t:"Lazy Lightning"},{f:"1t10",t:"Supplication"}],
+   sets:[{name:"SET 1",songs:["Sugaree","Beat It On Down the Line","Candyman","Me and My Uncle > Big River","Stagger Lee","Looks Like Rain","Tennessee Jed","Lazy Lightning > Supplication"]}],
+   notes:"STAGGER LEE — your namesake, fresh in the rotation (it debuted in 1978). Band-sanctioned tape from the Internet Archive. ▶ opens right on Stagger Lee; ⏮ ⏭ walk the set."},
+  {id:"s5",date:"1969-02-27",year:1969,venue:"Fillmore West",city:"San Francisco",state:"CA",country:"USA",band:"Grateful Dead",source:"Soundboard",rating:4.7,
+   nowPlaying:"Dark Star",
+   sets:[{name:"SET 1",songs:["Dark Star","St. Stephen","The Eleven","Turn On Your Lovelight"]}],
+   notes:"Early classic — high Vault Heat rating."},
+  {id:"s6",date:"1989-07-07",year:1989,venue:"JFK Stadium",city:"Philadelphia",state:"PA",country:"USA",band:"Grateful Dead",source:"Soundboard",rating:4.5,
+   nowPlaying:"Eyes of the World",
+   sets:[{name:"SET 1",songs:["Hell in a Bucket","Sugaree","We Can Run","Bird Song"]},
+         {name:"SET 2",songs:["Eyes of the World","Estimated Prophet","Terrapin Station","Morning Dew"]}],
+   notes:"Near you (PA) — surfaced by 'Near Me'."}
 ];
-let SHOWS = SEED, isSeed = true;
 
-async function load(){
-  // tries the pipeline output for this tab's slug; falls back to SEED
-  const slug = (new URLSearchParams(location.search)).get("slug") || "gd";
-  try{ const r = await fetch(`./${slug}_shows.json`); if(r.ok){ SHOWS = await r.json(); isSeed=false; } }catch(e){}
-  initYears(); render();
-}
-function initYears(){
-  const ys=[...new Set(SHOWS.map(s=>s.date.slice(0,4)))].sort();
-  document.getElementById("year").insertAdjacentHTML("beforeend", ys.map(y=>`<option>${y}</option>`).join(""));
-}
-function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
-function render(){
-  const q=document.getElementById("q").value.toLowerCase().trim();
-  const yr=document.getElementById("year").value, src=document.getElementById("src").value;
-  const dir=document.getElementById("sort").value;
-  let rows=SHOWS.filter(s=>{
-    if(yr && !s.date.startsWith(yr)) return false;
-    if(src && !(s.best_recording?.source||"").toLowerCase().includes(src.toLowerCase())
-            && !(s.recordings||[]).some(r=>(r.source||"").toLowerCase().includes(src.toLowerCase()))) return false;
-    if(q){ const hay=(s.date+" "+s.venue+" "+s.location+" "+s.lineup+" "+s.setlist+" "+(s.notes||"")).toLowerCase();
-           if(!hay.includes(q)) return false; }
-    return true;
-  });
-  rows.sort((a,b)=> dir==="asc"? a.date.localeCompare(b.date): b.date.localeCompare(a.date));
-  document.getElementById("count").textContent =
-     `${rows.length.toLocaleString()} shows` + (isSeed? "  ·  seed sample — run the pipeline to load the full archive":"");
-  document.getElementById("list").innerHTML =
-    (isSeed? `<div class="banner"><b>Seed sample (2 verified shows).</b> Drop <code>gd_shows.json</code> from the ingest pipeline next to this file to load all ~2,300 GD shows (or <code>?slug=jgb</code> for the Jerry Garcia Band).</div>`:"")
-    + rows.map(card).join("");
-}
-function card(s){
-  const sl = s.setlist_source==="NONE"
-     ? `<span class="badge none">setlist pending</span>`
-     : `<span class="badge ok">setlist: ${esc(s.setlist_source||"archive.org")}</span>`;
-  const links = `<div class="links">`
-     + (s.best_recording? `<a class="best" target="_blank" href="${esc(s.best_recording.stream)}">&#9654; Best tape (${esc(s.best_recording.source||"listen")})</a>`:"")
-     + (s.all_sources? `<a target="_blank" href="${esc(s.all_sources)}">All sources &#8599;</a>`:"")
-     + `</div>`;
-  return `<div class="show">
-     <div><span class="date">${esc(s.date)}</span> &middot; <span class="venue">${esc(s.venue)}</span> ${sl}</div>
-     <div class="loc">${esc(s.location)}</div>
-     ${s.lineup?`<div class="lineup">${esc(s.lineup)}</div>`:""}
-     ${s.guests?`<div class="lineup">Guests: ${esc(s.guests)}</div>`:""}
-     ${s.setlist?`<div class="setlist">${esc(s.setlist)}</div>`:""}
-     ${links}
-     ${s.notes?`<div class="note">${esc(s.notes)}</div>`:""}
-   </div>`;
-}
-["q","year","src","sort"].forEach(id=>document.getElementById(id).addEventListener("input",render));
-load();
-</script>
-<script>
-if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
-(function(){var d=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();d=e;var b=document.createElement('button');b.textContent='\u26a1 Install';b.style.cssText='position:fixed;right:14px;bottom:14px;z-index:999;background:#1a1207;color:#f4ead6;border:1px solid #c8932f;border-radius:10px;padding:10px 16px;font:600 14px Georgia,serif;cursor:pointer';b.onclick=function(){b.remove();if(d){d.prompt();d=null;}};document.body.appendChild(b);});})();
+CassetteReader.mount(document.getElementById("app"), {
+  brand:{ name:"Every Show", sub:"Grateful Dead · live archive · in your pocket", logo:"syf.png" },
+  marketId:"gd_archive",
+  account:{ id:"head1", region:"US" },
+  shows: SHOWS
+});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js').catch(function(){});}
 </script>
 </body></html>

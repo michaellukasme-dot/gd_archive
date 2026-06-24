@@ -1,7 +1,7 @@
 {
-  "name": "Grateful Dead Archive",
-  "short_name": "GD Archive",
-  "description": "Every show — a personal Grateful Dead concert archive.",
+  "name": "Every Show — Grateful Dead Live Archive",
+  "short_name": "Every Show",
+  "description": "Every Grateful Dead show, in your pocket — the cassette that plays. Filter by year, state, song, or venue; band-sanctioned audio from the Internet Archive.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
