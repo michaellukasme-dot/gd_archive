@@ -33,6 +33,7 @@
   ".cz-player{display:flex;align-items:center;gap:14px;justify-content:center;background:#141414;border-radius:14px;max-width:480px;margin:0 auto 8px;padding:12px 16px;color:#fff}.cz-player button{background:none;border:0;color:#fff;font-size:18px;cursor:pointer}.cz-player .cz-play{width:46px;height:46px;border-radius:50%;background:#fff;color:#141414;font-size:20px;box-shadow:0 2px 8px #0006;display:flex;align-items:center;justify-content:center}.cz-seek{flex:1;height:4px;background:#ffffff44;border-radius:2px;position:relative}.cz-seek i{position:absolute;left:60%;top:-4px;width:12px;height:12px;border-radius:50%;background:#fff}" +
   ".cz-recbtn{display:block;margin:0 auto 10px;background:#fff;border:2px solid var(--rust);color:var(--rust);border-radius:999px;padding:9px 22px;font:800 15px Georgia;cursor:pointer;display:flex;gap:8px;align-items:center}.cz-recbtn .dot{width:13px;height:13px;border-radius:50%;background:var(--rust)}" +
   ".cz-buy{display:flex;gap:8px;align-items:center;justify-content:center;margin:2px auto 12px;background:var(--rust);color:#fff;border:0;border-radius:999px;padding:13px 34px;font:800 16.5px Georgia;cursor:pointer;box-shadow:0 4px 14px rgba(154,59,27,.35)}.cz-buy:hover{filter:brightness(1.08)}" +
+  ".cz-showrow{display:flex;gap:8px;justify-content:center;margin:0 auto 10px;max-width:480px}.cz-mode{flex:1;background:#fff;border:1.5px solid var(--rust);color:var(--rust);border-radius:999px;padding:9px 12px;font:700 13px Georgia;cursor:pointer}.cz-mode:hover{background:#fbe7e2}.cz-mode.on{background:var(--rust);color:#fff}.cz-heard{background:var(--gold);color:#1a1207;border-radius:4px;padding:2px 7px;font:800 9.5px Georgia;letter-spacing:.05em;margin-left:6px}" +
   ".cz-licbar{background:#fff;border-bottom:1px solid var(--line);padding:9px 16px;text-align:center;font-size:12px;color:var(--rust);line-height:1.5}.cz-licbar b{color:var(--ink)}" +
   ".cz-sets{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0}.cz-set{background:#fff;border:1px solid var(--rust);color:var(--rust);border-radius:999px;padding:6px 16px;font:600 12.5px Georgia;cursor:pointer}.cz-set:hover{background:#fbe7e2}.cz-set.lyr{border-color:var(--gold);color:#8a5a0a}" +
   ".cz-notes{max-width:620px;margin:6px auto 0;padding:10px 14px;background:#fff8;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:#5a4a2a;line-height:1.5}" +
@@ -57,6 +58,11 @@
     var idx = 0, playing = false, pts = ptsLoad(), curTrack = 0, openKey = null;
     function ptsLoad(){try{return +localStorage.getItem("cz.pts")||0;}catch(e){return 0;}}
     function ptsSave(){try{localStorage.setItem("cz.pts",pts);}catch(e){}}
+    /* show-mode = play the whole show continuously, no track breaks (like the concert). Per-track stays too. */
+    var showMode = false;
+    function listenedKey(){return "cz.listened."+(cfg.marketId||"gd");}
+    var listened=(function(){try{return JSON.parse(localStorage.getItem(listenedKey()))||{};}catch(e){return {};}})();
+    function markListened(id){if(id&&!listened[id]){listened[id]=Date.now();try{localStorage.setItem(listenedKey(),JSON.stringify(listened));}catch(e){}}}
 
     function filtered() {
       return shows.filter(function (s) {
@@ -87,10 +93,12 @@
       return [];
     }
     function npTitle(s) { var tl = trackList(s); if (tl.length && tl[curTrack]) return tl[curTrack].title; return (s && (s.nowPlaying || (s.sets && s.sets[0] && s.sets[0].songs[0]))) || "—"; }
-    function handLabel(s) { return esc(s && s.band || "Live") + " " + (s && s.year ? "’" + String(s.year).slice(-2) : "") + (npTitle(s) && npTitle(s) !== "—" ? " — " + esc(npTitle(s)) : ""); }
-    function updateNP() { var s = view[idx]; var npb = el.querySelector(".cz-np b"); if (npb) npb.textContent = npTitle(s); var lbl = el.querySelector(".cz-label"); if (lbl) { var h = handLabel(s); lbl.textContent = h; lbl.title = h; } syncPlay(); }
+    /* in show-mode the UI doesn't flip song to song — the dancer just keeps spinning */
+    function npLabel(s) { return showMode ? "the whole show — no breaks 🌹" : npTitle(s); }
+    function handLabel(s) { return esc(s && s.band || "Live") + " " + (s && s.year ? "’" + String(s.year).slice(-2) : "") + (npLabel(s) && npLabel(s) !== "—" ? " — " + esc(npLabel(s)) : ""); }
+    function updateNP() { var s = view[idx]; var npb = el.querySelector(".cz-np b"); if (npb) npb.textContent = npLabel(s); var lbl = el.querySelector(".cz-label"); if (lbl) { var h = handLabel(s); lbl.textContent = h; lbl.title = h; } syncPlay(); }
     function syncPlay() { var pb = el.querySelector(".cz-play"); if (pb) pb.textContent = playing ? "⏸" : "▶"; var rs = el.querySelectorAll(".cz-reel"); for (var i = 0; i < rs.length; i++) rs[i].classList.toggle("spin", playing); }
-    audio.addEventListener("play", function () { playing = true; syncPlay(); });
+    audio.addEventListener("play", function () { playing = true; var id = (view[idx] || {}).id; var fresh = id && !listened[id]; markListened(id); if (fresh) render(); else syncPlay(); });
     audio.addEventListener("pause", function () { playing = false; syncPlay(); });
     audio.addEventListener("ended", function () {
       var tl = trackList(view[idx]);
@@ -113,7 +121,7 @@
     function tape() {
       var s = view[idx];
       if (!s) return '<div class="cz-stage"><div class="cz-tape"><div class="cz-win"><div class="dt">No tapes match</div><div class="vn">loosen a filter</div></div></div></div>';
-      var np = npTitle(s);
+      var np = npLabel(s);
       var hand = handLabel(s);
       return '<div class="cz-stage">' +
         '<div class="cz-arrow l' + (idx <= 0 ? " off" : "") + '" data-nav="-1"></div>' +
@@ -121,7 +129,7 @@
           '<div class="cz-label" title="' + hand + '">' + hand + '</div>' +
           '<div class="cz-win"><div class="dt"><b>' + esc(s.date) + '</b> · ' + esc(s.venue) + '</div><div class="vn">' + esc(s.city) + ', ' + esc(s.state || s.country) + '</div><div class="bd">' + esc(s.band) + (s.rating ? ' · ★' + s.rating : '') + '</div></div>' +
           '<div class="cz-reels"><div class="cz-reel' + (playing ? ' spin' : '') + '"></div><div class="cz-counter">' + ("000" + (idx + 1)).slice(-4) + '.0</div><div class="cz-reel' + (playing ? ' spin' : '') + '"></div></div>' +
-          '<div class="cz-tapebot"><span class="cz-grade" title="' + esc(s.source || "best source") + '">' + grade(s.source) + '</span><div class="cz-np">' + ((np && np !== "—") ? '♪ now playing: <b>' + esc(np) + '</b>' : (s.lineup ? '<b>' + esc(s.lineup) + '</b>' : '♪')) + '</div></div></div>' +
+          '<div class="cz-tapebot"><span class="cz-grade" title="' + esc(s.source || "best source") + '">' + grade(s.source) + '</span>' + (listened[s.id] ? '<span class="cz-heard">✓ heard</span>' : '') + '<div class="cz-np">' + ((np && np !== "—") ? (showMode ? '♪ <b>' + esc(np) + '</b>' : '♪ now playing: <b>' + esc(np) + '</b>') : (s.lineup ? '<b>' + esc(s.lineup) + '</b>' : '♪')) + '</div></div></div>' +
         '<div class="cz-arrow r' + (idx >= view.length - 1 ? " off" : "") + '" data-nav="1"></div></div>';
     }
     function controls() {
@@ -132,7 +140,8 @@
         '<div class="cz-player"><button data-trk="-1" title="previous track">⏮</button><button class="cz-play" data-play="1">' + (playing ? "⏸" : "▶") + '</button><div class="cz-seek"><i></i></div><button data-trk="1" title="next track">⏭</button><button data-like="1">♥</button></div>' +
         '<button class="cz-recbtn" data-rec="1"><span class="dot"></span> REC a bootleg</button>';
       var buyBtn = cfg.buy ? '<button class="cz-buy" data-buy="1">🛒 ' + esc(cfg.buy.label || "Buy Now") + '</button>' : '';
-      return transport + buyBtn +
+      var showRow = cfg.hidePlayer ? "" : '<div class="cz-showrow"><button class="cz-mode' + (showMode ? " on" : "") + '" data-show="1" title="Play the whole show — no track breaks, like the concert">🌹 dead_dance</button><button class="cz-mode" data-new="1" title="Play a show you haven\'t heard yet">🎲 New show</button></div>';
+      return transport + showRow + buyBtn +
         '<div class="cz-sets">' + setPills + '</div>' +
         (s.notes ? '<div class="cz-notes">' + esc(s.notes) + '</div>' : '');
     }
@@ -166,10 +175,28 @@
       updateNP(); return true;
     }
     el.addEventListener("click", function (e) {
-      var t = e.target.closest("[data-pop],[data-nav],[data-trk],[data-play],[data-rec],[data-set],[data-lyr],[data-like],[data-clear],[data-buy]"); if (!t) return;
+      var t = e.target.closest("[data-pop],[data-nav],[data-trk],[data-play],[data-rec],[data-set],[data-lyr],[data-like],[data-clear],[data-buy],[data-show],[data-new]"); if (!t) return;
       if (t.dataset.pop) { if (openKey === t.dataset.pop) { closeUI(); } else { openPop(t.dataset.pop, t); } }
       else if (t.dataset.nav) { var n = idx + (+t.dataset.nav); if (n >= 0 && n < view.length) { idx = n; try { audio.pause(); } catch (e2) {} playing = false; curTrack = (view[n] && view[n].startTrack) || 0; render(); } }
-      else if (t.dataset.trk) { var s = view[idx], tl = trackList(s); if (tl.length) playTrack(curTrack + (+t.dataset.trk)); }
+      else if (t.dataset.trk) { var s = view[idx], tl = trackList(s); if (tl.length) { showMode = false; playTrack(curTrack + (+t.dataset.trk)); } }
+      else if (t.dataset.show != null) {
+        var ssh = view[idx], tlsh = trackList(ssh);
+        if (!tlsh.length) { toast('<h4>🌹 Play as a show</h4><div style="font-size:13px">This tape carries no cleared stream yet (licensing gate). The shows that DO carry a source play the whole set continuously — no track breaks, like the concert.</div>'); return; }
+        showMode = true; curTrack = 0; markListened(ssh.id);
+        try { audio.src = tlsh[0].url; var prsh = audio.play(); if (prsh && prsh.catch) prsh.catch(function () {}); } catch (e5) {}
+        render();
+      }
+      else if (t.dataset.new != null) {
+        var pool = view.filter(function (x) { return !listened[x.id] && trackList(x).length; });
+        var allHeard = false;
+        if (!pool.length) { pool = view.filter(function (x) { return trackList(x).length; }); allHeard = true; }
+        if (!pool.length) { toast('<h4>🎲 New show</h4><div style="font-size:13px">No tape in this filter carries a cleared stream yet.</div>'); return; }
+        var pick = pool[Math.floor(Math.random() * pool.length)];
+        idx = view.indexOf(pick); curTrack = 0; markListened(pick.id);
+        try { audio.src = trackList(pick)[0].url; var prn = audio.play(); if (prn && prn.catch) prn.catch(function () {}); } catch (e6) {}
+        render();
+        if (allHeard) toast('<h4>🎲 You\'ve heard them all 🌹</h4><div style="font-size:13px">Spinning a favorite again — the circle never stops.</div>');
+      }
       else if (t.dataset.play) {
         var sp = view[idx], tl2 = trackList(sp);
         if (tl2.length) {
